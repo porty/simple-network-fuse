@@ -16,7 +16,7 @@ import (
 
 var OKStruct = snf.Response{
 	ErrorCode: 0,
-	Files:     []snf.File{},
+	Files:     []*snf.File{},
 }
 
 var BlankString = ""
@@ -102,7 +102,7 @@ func handleRequest(w io.Writer, r *snf.Request, path string) error {
 		if err != nil && err != io.EOF {
 			return writeError(w, err)
 		}
-		files := make([]snf.File, 0, len(fis))
+		files := make([]*snf.File, 0, len(fis))
 		for _, fi := range fis {
 			files = append(files, snf.FromFileInfo(fi))
 		}

@@ -7,7 +7,7 @@ import (
 
 type Response struct {
 	ErrorCode uint32
-	Files     []File
+	Files     []*File
 }
 
 const (
@@ -24,8 +24,8 @@ type File struct {
 	ModTime time.Time
 }
 
-func FromFileInfo(fi os.FileInfo) File {
-	return File{
+func FromFileInfo(fi os.FileInfo) *File {
+	return &File{
 		Name:    fi.Name(),
 		Size:    fi.Size(),
 		Mode:    fi.Mode(),

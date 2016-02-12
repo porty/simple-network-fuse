@@ -72,7 +72,7 @@ func (fs FS) Root() (fs.Node, error) {
 
 	log.Printf("Response: %d", resp.ErrorCode)
 
-	fileMap := make(map[string]snf.File)
+	fileMap := make(map[string]*snf.File)
 	for _, f := range resp.Files {
 		fileMap[f.Name] = f
 	}
@@ -103,7 +103,7 @@ func fileModeToDirentType(fm os.FileMode) fuse.DirentType {
 }
 
 type Dir struct {
-	files *map[string]snf.File
+	files *map[string]*snf.File
 }
 
 func (Dir) Attr(ctx context.Context, a *fuse.Attr) error {
@@ -133,7 +133,7 @@ func (d Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 }
 
 type File struct {
-	info snf.File
+	info *snf.File
 }
 
 func (f File) Attr(ctx context.Context, a *fuse.Attr) error {
