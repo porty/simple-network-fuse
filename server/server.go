@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -67,10 +66,7 @@ func readRequest(reader io.Reader, request *snf.Request) error {
 
 func handleRequest(w io.Writer, r *snf.Request, path string) error {
 	if r.Op == snf.FILE_CREATE {
-		if r.Name == nil {
-			return errors.New("Protocol error: Name field required for FILE_CREATE operation")
-		}
-		fullPath := pathMunge(path, *r.Name)
+		fullPath := pathMunge(path, r.Name)
 		f, err := os.Create(fullPath)
 		if err != nil {
 			return writeError(w, err)
@@ -78,20 +74,13 @@ func handleRequest(w io.Writer, r *snf.Request, path string) error {
 		f.Close()
 		return writeOK(w)
 	} else if r.Op == snf.FILE_UNLINK {
-		if r.Name == nil {
-			return errors.New("Protocol error: Name field required for FILE_UNLINK operation")
-		}
-		fullPath := pathMunge(path, *r.Name)
+		fullPath := pathMunge(path, r.Name)
 		if err := os.Remove(fullPath); err != nil {
 			return writeError(w, err)
 		}
 		return writeOK(w)
 	} else if r.Op == snf.DIR_LIST {
-		if r.Name == nil {
-			//return errors.New("Protocol error: Name field required for DIR_LIST operation")
-			r.Name = &BlankString
-		}
-		fullPath := pathMunge(path, *r.Name)
+		fullPath := pathMunge(path, r.Name)
 		f, err := os.Open(fullPath)
 		if err != nil {
 			return writeError(w, err)

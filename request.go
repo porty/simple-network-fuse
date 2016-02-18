@@ -8,5 +8,5 @@ const (
 
 type Request struct {
 	Op   uint32
-	Name *string
+	Name string
 }

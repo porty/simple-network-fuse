@@ -52,10 +52,9 @@ type FS struct {
 }
 
 func (fs FS) Root() (fs.Node, error) {
-	name := ""
 	req := snf.Request{
 		Op:   snf.DIR_LIST,
-		Name: &name,
+		Name: "",
 	}
 	err := fs.encoder.Encode(&req)
 	if err != nil {
