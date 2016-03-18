@@ -27,7 +27,13 @@ func intmain() int {
 		return 1
 	}
 
-	if err := server.ServeTCP(*bind, *path); err != nil {
+	fs, err := server.NewRealFileSystem(*path)
+	if err != nil {
+		fmt.Println("Failed to use specified directory: " + err.Error())
+		return 1
+	}
+
+	if err := server.ServeTCP(*bind, &fs); err != nil {
 		fmt.Println("Failed to start server: " + err.Error())
 		return 1
 	}

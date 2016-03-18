@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"path/filepath"
 	"syscall"
 
@@ -20,15 +19,15 @@ var OKStruct = snf.Response{
 
 var BlankString = ""
 
-func ServeTCP(bindAddress string, path string) error {
+func ServeTCP(bindAddress string, fs FileSystem) error {
 	listener, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return err
 	}
-	return ServeListener(listener, path)
+	return ServeListener(listener, fs)
 }
 
-func ServeListener(listener net.Listener, path string) error {
+func ServeListener(listener net.Listener, fs FileSystem) error {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -36,7 +35,7 @@ func ServeListener(listener net.Listener, path string) error {
 		}
 		go func(conn net.Conn) {
 			log.Println("Client connected")
-			if err := ServeStream(conn, path); err != nil {
+			if err := ServeStream(conn, fs); err != nil {
 				log.Println("Error while serving connection: " + err.Error())
 			} else {
 				log.Println("Client disconnected")
@@ -45,7 +44,7 @@ func ServeListener(listener net.Listener, path string) error {
 	}
 }
 
-func ServeStream(stream io.ReadWriter, path string) error {
+func ServeStream(stream io.ReadWriter, fs FileSystem) error {
 	r := new(snf.Request)
 	for {
 		if err := readRequest(stream, r); err != nil {
@@ -54,7 +53,7 @@ func ServeStream(stream io.ReadWriter, path string) error {
 			}
 			return nil
 		}
-		if err := handleRequest(stream, r, path); err != nil {
+		if err := handleRequest(stream, r, fs); err != nil {
 			return err
 		}
 	}
@@ -65,36 +64,21 @@ func readRequest(reader io.Reader, request *snf.Request) error {
 	return dec.Decode(request)
 }
 
-func handleRequest(w io.Writer, r *snf.Request, path string) error {
+func handleRequest(w io.Writer, r *snf.Request, fs FileSystem) error {
 	if r.Op == snf.FILE_CREATE {
-		fullPath := pathMunge(path, r.Name)
-		f, err := os.Create(fullPath)
-		if err != nil {
+		if err := fs.CreateFile(r.Name); err != nil {
 			return writeError(w, err)
 		}
-		f.Close()
 		return writeOK(w)
 	} else if r.Op == snf.FILE_UNLINK {
-		fullPath := pathMunge(path, r.Name)
-		if err := os.Remove(fullPath); err != nil {
+		if err := fs.Delete(r.Name); err != nil {
 			return writeError(w, err)
 		}
 		return writeOK(w)
 	} else if r.Op == snf.DIR_LIST {
-		fullPath := pathMunge(path, r.Name)
-		f, err := os.Open(fullPath)
+		files, err := fs.List(r.Name)
 		if err != nil {
 			return writeError(w, err)
-		}
-		defer f.Close()
-
-		fis, err := f.Readdir(0)
-		if err != nil && err != io.EOF {
-			return writeError(w, err)
-		}
-		files := make([]*snf.File, 0, len(fis))
-		for _, fi := range fis {
-			files = append(files, snf.FromFileInfo(fi))
 		}
 		resp := snf.Response{
 			ErrorCode: 0,

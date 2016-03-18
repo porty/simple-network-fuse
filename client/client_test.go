@@ -29,6 +29,11 @@ func TestSimpleMount(t *testing.T) {
 		}
 	}()
 	log.Printf("Created mount dir at %s", mountdir)
+	fs, err := server.NewRealFileSystem(mountdir)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -46,7 +51,7 @@ func TestSimpleMount(t *testing.T) {
 		}
 		ln.Close()
 		log.Print("Accepted a client :)")
-		serverResultChan <- server.ServeStream(conn, mountdir)
+		serverResultChan <- server.ServeStream(conn, &fs)
 	}()
 
 	log.Print("About to mount...")
