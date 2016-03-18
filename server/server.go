@@ -37,11 +37,9 @@ func ServeListener(listener net.Listener, path string) error {
 		go func(conn net.Conn) {
 			log.Println("Client connected")
 			if err := ServeConnection(conn, path); err != nil {
-				if err == io.EOF {
-					log.Println("Client disconnected")
-				} else {
-					log.Println("Error while serving connection: " + err.Error())
-				}
+				log.Println("Error while serving connection: " + err.Error())
+			} else {
+				log.Println("Client disconnected")
 			}
 		}(conn)
 	}
@@ -51,7 +49,10 @@ func ServeConnection(conn net.Conn, path string) error {
 	r := new(snf.Request)
 	for {
 		if err := readRequest(conn, r); err != nil {
-			return err
+			if err != io.EOF {
+				return err
+			}
+			return nil
 		}
 		if err := handleRequest(conn, r, path); err != nil {
 			return err
