@@ -9,6 +9,11 @@ import (
 	"bazil.org/fuse/fs"
 )
 
+type connection struct {
+	enc *gob.Encoder
+	dec *gob.Decoder
+}
+
 func Mount(host, mountpoint string) error {
 	conn, err := net.Dial("tcp", host)
 	if err != nil {
@@ -27,10 +32,12 @@ func Mount(host, mountpoint string) error {
 	}
 	defer c.Close()
 
-	err = fs.Serve(c, FS{
-		encoder: gob.NewEncoder(conn),
-		decoder: gob.NewDecoder(conn),
-	})
+	fsConn := connection{
+		enc: gob.NewEncoder(conn),
+		dec: gob.NewDecoder(conn),
+	}
+
+	err = fs.Serve(c, &FS{fsConn})
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package client
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -11,7 +12,38 @@ import (
 )
 
 type Dir struct {
+	conn  connection
 	files *map[string]*snf.File
+	path  string
+}
+
+func DirFromPath(conn connection, path string) (*Dir, error) {
+	req := snf.Request{
+		Op:   snf.DirList,
+		Name: path,
+	}
+	err := conn.enc.Encode(&req)
+	if err != nil {
+		log.Println("Failed to request file operation: " + err.Error())
+		return nil, err
+	}
+
+	resp := snf.Response{}
+	err = conn.dec.Decode(&resp)
+	if err != nil {
+		log.Println("Failed to get response: " + err.Error())
+		return nil, err
+	}
+
+	fileMap := make(map[string]*snf.File)
+	for _, f := range resp.Files {
+		fileMap[f.Name] = f
+	}
+	return &Dir{
+		conn:  conn,
+		files: &fileMap,
+		path:  path,
+	}, nil
 }
 
 func (Dir) Attr(ctx context.Context, a *fuse.Attr) error {
@@ -21,7 +53,6 @@ func (Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 }
 
 func (d Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
-	log.Println("Dir::ReadDirAll()")
 	files := make([]fuse.Dirent, 0, len(*d.files))
 
 	for _, f := range *d.files {
@@ -36,6 +67,9 @@ func (d Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 
 func (d Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 	if f, ok := (*d.files)[name]; ok {
+		if f.Mode.IsDir() {
+			return DirFromPath(d.conn, pathMunge(d.path, name))
+		}
 		return File{info: f}, nil
 	}
 	return nil, fuse.ENOENT
@@ -62,4 +96,8 @@ func fileModeToDirentType(fm os.FileMode) fuse.DirentType {
 		return fuse.DT_Socket
 	}
 	return fuse.DT_File
+}
+
+func pathMunge(basePath, name string) string {
+	return filepath.Join(filepath.Clean(basePath), filepath.Clean(name))
 }
