@@ -51,7 +51,8 @@ func TestSimpleMount(t *testing.T) {
 		}
 		ln.Close()
 		log.Print("Accepted a client :)")
-		serverResultChan <- server.ServeStream(conn, &fs)
+		s := server.New(conn, conn, &fs)
+		serverResultChan <- s.Serve()
 	}()
 
 	log.Print("About to mount...")
