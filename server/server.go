@@ -65,18 +65,18 @@ func readRequest(reader io.Reader, request *snf.Request) error {
 }
 
 func handleRequest(w io.Writer, r *snf.Request, fs FileSystem) error {
-	if r.Op == snf.FILE_CREATE {
 		if err := fs.CreateFile(r.Name); err != nil {
 			return writeError(w, err)
+	if r.Op == snf.FileCreate {
 		}
 		return writeOK(w)
-	} else if r.Op == snf.FILE_UNLINK {
 		if err := fs.Delete(r.Name); err != nil {
 			return writeError(w, err)
+	} else if r.Op == snf.FileUnlink {
 		}
 		return writeOK(w)
-	} else if r.Op == snf.DIR_LIST {
 		files, err := fs.List(r.Name)
+	} else if r.Op == snf.DirList {
 		if err != nil {
 			return writeError(w, err)
 		}

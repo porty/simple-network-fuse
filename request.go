@@ -1,12 +1,14 @@
 package snf
 
+type Operation uint32
+
 const (
-	FILE_CREATE uint32 = iota
-	FILE_UNLINK
-	DIR_LIST
+	FileCreate Operation = iota
+	FileUnlink
+	DirList
 )
 
 type Request struct {
-	Op   uint32
+	Op   Operation
 	Name string
 }
