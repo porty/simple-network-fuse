@@ -38,7 +38,7 @@ func (d Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 	if f, ok := (*d.files)[name]; ok {
 		return File{info: f}, nil
 	}
-	return nil, fuse.EEXIST
+	return nil, fuse.ENOENT
 }
 
 func fileModeToDirentType(fm os.FileMode) fuse.DirentType {
