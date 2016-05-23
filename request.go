@@ -1,4 +1,4 @@
-package server
+package snf
 
 const (
 	FILE_CREATE uint32 = iota
